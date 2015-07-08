@@ -1,14 +1,16 @@
 import gtk
 import numpy as np
 import os
+import matplotlib.pyplot as plt
 from ase.gui.widgets import pack
 from gettext import gettext as _
 from ase.data import chemical_symbols as symbols
 from ase.data import atomic_names as names
 
+
 class Levels(gtk.Window):
 
-    def __init__(self,gui):
+    def __init__(self, gui):
         #Set defaults
         self.log_file = None
         self.fchk_file = None
@@ -21,37 +23,34 @@ class Levels(gtk.Window):
         self.gui = gui
         vbox = gtk.VBox()
         vbox.set_border_width(5)
-        #self.table = gtk.Table(rows=10, columns=2, homogeneous=False)
-        #pack(vbox, self.table) 
 
         #Button to select G09 log file
         a = pack(vbox, gtk.Label())
-        self.log_entry_box, b = pack(vbox, [gtk.Entry(max=25), gtk.Button(_('Choose Gaussian output file'))])
+        self.log_entry_box, b = pack(vbox, [gtk.Entry(max=25), 
+                                            gtk.Button(_('Choose Gaussian output file'))])
         self.log_entry_box.set_max_length(0)
-        self.log_entry_box.connect('activate',self.log_entry)
+        self.log_entry_box.connect('activate', self.log_entry)
         b.connect('clicked', self.choose_log_file)
-        #self.table.attach(self.log_entry_box, 0, 0)
-        #self.table.attach(b, 0, 1)
 
         #Button to select fchk file
         a = pack(vbox, gtk.Label())
-        self.fchk_entry_box, b = pack(vbox, [gtk.Entry(max=25), gtk.Button(_('Choose fchk file'))])
+        self.fchk_entry_box, b = pack(vbox, [gtk.Entry(max=25), 
+                                             gtk.Button(_('Choose fchk file'))])
         self.fchk_entry_box.set_max_length(0)
-        self.fchk_entry_box.connect('activate',self.log_entry)
+        self.fchk_entry_box.connect('activate', self.log_entry)
         b.connect('clicked', self.choose_fchk_file)
 
         #Dial to set number of occupied orbitals
         self.occ_scale = gtk.Adjustment(value=2, lower=0, upper=100, step_incr=1)
-        self.occ_spinner = gtk.SpinButton(self.occ_scale, climb_rate=0, digits= 0)
+        self.occ_spinner = gtk.SpinButton(self.occ_scale, climb_rate=0, digits=0)
         self.occ_spinner.set_update_policy(gtk.UPDATE_IF_VALID)
         self.occ_spinner.set_numeric(True)
-        pack(vbox, [gtk.Label(_('Number of occupied states ')),
-                    self.occ_spinner])
+        pack(vbox, [gtk.Label(_('Number of occupied states ')), self.occ_spinner])
         self.occ_scale.connect('value-changed', self.scale_occ_orb) 
 
         #Dial to set number of virtual orbitals
         self.virt_scale = gtk.Adjustment(value=2, lower=0, upper=100, step_incr=1)
-        self.virt_spinner = gtk.SpinButton(self.virt_scale, climb_rate=0, digits= 0)
+        self.virt_spinner = gtk.SpinButton(self.virt_scale, climb_rate=0, digits=0)
         self.virt_spinner.set_update_policy(gtk.UPDATE_IF_VALID)
         self.virt_spinner.set_numeric(True)
         pack(vbox, [gtk.Label(_('Number of unoccupied states ')),
@@ -60,7 +59,7 @@ class Levels(gtk.Window):
 
         #Dial to set number of bins
         self.bin_scale = gtk.Adjustment(value=100, lower=0, upper=500, step_incr=1)
-        self.bin_spinner = gtk.SpinButton(self.bin_scale, climb_rate=5, digits= 0)
+        self.bin_spinner = gtk.SpinButton(self.bin_scale, climb_rate=5, digits=0)
         self.bin_spinner.set_update_policy(gtk.UPDATE_IF_VALID)
         self.bin_spinner.set_numeric(True)
         pack(vbox, [gtk.Label(_('Number of bins ')),
@@ -75,25 +74,23 @@ class Levels(gtk.Window):
 
         #Button to set scaling
         a = pack(vbox, gtk.Label('Scaling method'))
-        button = pack(vbox, gtk.RadioButton(None, "Global"))
-        button.connect("toggled", self.set_scaling_method, "global")
+        button = pack(vbox, gtk.RadioButton(None, 'Global'))
+        button.connect('toggled', self.set_scaling_method, 'global')
         button.show()
         
-        button = pack(vbox, gtk.RadioButton(button, "Orbital"))
-        button.connect("toggled", self.set_scaling_method, "orbital")
+        button = pack(vbox, gtk.RadioButton(button, 'Orbital'))
+        button.connect('toggled', self.set_scaling_method, 'orbital')
         button.show()
 
         #Button to set all of the parameters
         a = pack(vbox, gtk.Label())
         a = pack(vbox, gtk.Button(_('Run')))
-        a.connect('clicked', self.run_SOLD)
-        
+        a.connect('clicked', self.run_sold)
 
         # Add elements and show frame
         self.add(vbox)
         vbox.show()
         self.show()
-
 
     def confirm_points(self, button):
         indices = np.arange(self.gui.images.natoms)[self.gui.images.selected]
@@ -105,7 +102,7 @@ class Levels(gtk.Window):
             self.coords = self.gui.images.P[0][indices]
         else:
             points_error = gtk.MessageDialog(type=gtk.MESSAGE_ERROR, buttons=gtk.BUTTONS_NONE) 
-            points_error.set_markup("Please select two points")
+            points_error.set_markup('Please select two points')
             points_error.run()
 
     def log_entry(self, widget):
@@ -116,19 +113,19 @@ class Levels(gtk.Window):
 
     #Button for getting fchk file
     def choose_fchk_file(self, button):
-        chooser = gtk.FileChooserDialog(title=None,action=gtk.FILE_CHOOSER_ACTION_OPEN, 
-                       buttons=(gtk.STOCK_CANCEL,gtk.RESPONSE_CANCEL,gtk.STOCK_OPEN,gtk.RESPONSE_OK))
+        chooser = gtk.FileChooserDialog(title=None, action=gtk.FILE_CHOOSER_ACTION_OPEN, 
+                       buttons=(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL, gtk.STOCK_OPEN, gtk.RESPONSE_OK))
         chooser.set_current_folder(os.getcwd())
         
         #Set file filters
         file_filter = gtk.FileFilter()
-        file_filter.set_name("Formatted checkpoint files")
-        file_filter.add_pattern("*.fchk")
-        file_filter.add_pattern("*.fch")
+        file_filter.set_name('Formatted checkpoint files')
+        file_filter.add_pattern('*.fchk')
+        file_filter.add_pattern('*.fch')
         chooser.add_filter(file_filter)        
         file_filter = gtk.FileFilter()
-        file_filter.set_name("All files")
-        file_filter.add_pattern("*")
+        file_filter.set_name('All files')
+        file_filter.add_pattern('*')
         chooser.add_filter(file_filter)
 
         response = chooser.run()
@@ -136,24 +133,24 @@ class Levels(gtk.Window):
             self.fchk_file = chooser.get_filename()
             self.fchk_entry_box.set_text(self.fchk_file)
         elif response == gtk.RESPONSE_CANCEL:
-            print 'Closed, no files selected'
+            print('Closed, no files selected')
         chooser.destroy()     
 
     #Button for getting gaussian output file
     def choose_log_file(self, button):
-        chooser = gtk.FileChooserDialog(title=None,action=gtk.FILE_CHOOSER_ACTION_OPEN, 
-                       buttons=(gtk.STOCK_CANCEL,gtk.RESPONSE_CANCEL,gtk.STOCK_OPEN,gtk.RESPONSE_OK))
+        chooser = gtk.FileChooserDialog(title=None, action=gtk.FILE_CHOOSER_ACTION_OPEN, 
+                       buttons=(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL, gtk.STOCK_OPEN, gtk.RESPONSE_OK))
         chooser.set_current_folder(os.getcwd())
         
         #Set file filters
         file_filter = gtk.FileFilter()
-        file_filter.set_name("Gaussian output files")
-        file_filter.add_pattern("*.log")
-        file_filter.add_pattern("*.out")
+        file_filter.set_name('Gaussian output files')
+        file_filter.add_pattern('*.log')
+        file_filter.add_pattern('*.out')
         chooser.add_filter(file_filter)        
         file_filter = gtk.FileFilter()
-        file_filter.set_name("All files")
-        file_filter.add_pattern("*")
+        file_filter.set_name('All files')
+        file_filter.add_pattern('*')
         chooser.add_filter(file_filter)
 
         response = chooser.run()
@@ -161,9 +158,8 @@ class Levels(gtk.Window):
             self.log_file = chooser.get_filename()
             self.log_entry_box.set_text(self.log_file)
         elif response == gtk.RESPONSE_CANCEL:
-            print 'Closed, no files selected'
+            print('Closed, no files selected')
         chooser.destroy()     
-
 
     #Button to get desired number of occupied orbitals
     def scale_occ_orb(self, adjustment):
@@ -173,44 +169,23 @@ class Levels(gtk.Window):
     def scale_virt_orb(self, adjustment):
         return True
 
+    #Button to get the number of bins    
     def scale_bin_num(self, adjustment):
         return True
     
-    def set_scaling_method(self, widget ,data='global'):
-        if data == 'orbital' and widget.get_active()==True:
+    #Set the scaling method
+    def set_scaling_method(self, widget, data='global'):
+        if data == 'orbital' and widget.get_active() == True:
             self.scaling_method = 'orbital'
         elif data == 'global' and widget.get_active() == True:
             self.scaling_method = 'global'
 
-    #Button to run the code
-    def run_SOLD(self, button):
-        #Check that all parameters have been set
-        if self.log_file == None:
-            log_error = gtk.MessageDialog(type=gtk.MESSAGE_ERROR, buttons=gtk.BUTTONS_NONE) 
-            log_error.set_markup("Please select a Gaussian output file and run again")
-            log_error.run()
-        if self.fchk_file == None:
-            fchk_error = gtk.MessageDialog(type=gtk.MESSAGE_ERROR, buttons=gtk.BUTTONS_NONE) 
-            fchk_error.set_markup("Please select a formatted checkpoint file and run again")
-            fchk_error.run()
-        if self.coords == None:
-            points_error = gtk.MessageDialog(type=gtk.MESSAGE_ERROR, buttons=gtk.BUTTONS_NONE) 
-            points_error.set_markup("Please select two atoms to use as points")
-            points_error.run()            
-        
-        #Write config and run code
-        else:
-            self.write_config()
-            os.system('SOLD < levels_config.txt')     
-            os.system('SOLD_plot.py')
-
-
+    #Write out the parameters to a config file        
     def write_config(self):     
         occ_num = str(self.occ_spinner.get_value_as_int())
         virt_num = str(self.virt_spinner.get_value_as_int())
         bin_num = str(self.bin_spinner.get_value_as_int())
     
-        #Write out the parameters to a config file
         config_file = open('levels_config.txt', 'w')
             
         config_file.write(self.log_file + '\n')
@@ -225,4 +200,65 @@ class Levels(gtk.Window):
         config_file.write(bin_num + '\n')
         config_file.write(self.scaling_method + '\n')
 
+    def plot_levels(self):
+        scaled_list = []
+        scaled_temp_list = []
 
+        data_file = open('projected_sums.txt', 'r')
+
+        for line in data_file:
+            line_split = line.split()
+            
+            if line_split[0] == '---':
+                scaled_list.append([energy,scaled_temp_list])
+                scaled_temp_list = []
+            else:
+                energy = float(line_split[0])
+                
+                scaled_temp_list.append([float(line_split[1]),float(line_split[2])])  
+
+        plt.rc('text', usetex=True)
+        plt.rc('font', family='serif')
+
+        plt.xlim((-5,20))
+        for i in range(len(scaled_list)):
+            for j in range(len(scaled_list[i][1])):
+                
+                if (i+1 < len(scaled_list)) and scaled_list[i][0] == scaled_list[i+1][0]:
+                    scaled_list[i][0] -= 0.1
+                    scaled_list[i+1][0] += 0.1
+                    #Get the min and max values of the x axis 
+                    xmin,xmax=plt.xlim()
+                    #Add a label indicating the energy shift for degeneracy 
+                    plt.text(xmin+1, scaled_list[i][0],'Shifted for \ndegeneracy')            
+                
+                plt.scatter(scaled_list[i][1][j][0], scaled_list[i][0],
+                            color=str(scaled_list[i][1][j][1]))
+
+        plt.xlabel('Distance along v [\AA]')
+        plt.ylabel(r'Energy [eV]')          
+
+        plt.show()
+
+    #Button to run the code
+    def run_sold(self, button):
+        #Check that all parameters have been set
+        if self.log_file == None:
+            log_error = gtk.MessageDialog(type=gtk.MESSAGE_ERROR, buttons=gtk.BUTTONS_NONE) 
+            log_error.set_markup('Please select a Gaussian output file and run again')
+            log_error.run()
+        if self.fchk_file == None:
+            fchk_error = gtk.MessageDialog(type=gtk.MESSAGE_ERROR, buttons=gtk.BUTTONS_NONE) 
+            fchk_error.set_markup('Please select a formatted checkpoint file and run again')
+            fchk_error.run()
+        if self.coords == None:
+            points_error = gtk.MessageDialog(type=gtk.MESSAGE_ERROR, buttons=gtk.BUTTONS_NONE) 
+            points_error.set_markup('Please select two atoms to use as points')
+            points_error.run()            
+        
+        #Write config and run code
+        else:
+            self.write_config()
+            os.system('SOLD < levels_config.txt')     
+            #os.system('SOLD_plot.py')
+            self.plot_levels()
