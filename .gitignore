@@ -1,0 +1,15 @@
+*.log
+*.cube
+*.fchk
+*.in
+*.pyc
+*.tga
+*.svg
+*.aux
+*.pdf
+*.synctex.gz
+*.tex
+*.odp
+
+
+
