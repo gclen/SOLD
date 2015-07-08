@@ -260,5 +260,4 @@ class Levels(gtk.Window):
         else:
             self.write_config()
             os.system('SOLD < levels_config.txt')     
-            #os.system('SOLD_plot.py')
             self.plot_levels()
