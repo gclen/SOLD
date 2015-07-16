@@ -2,6 +2,7 @@ import gtk
 import numpy as np
 import os
 import matplotlib.pyplot as plt
+import matplotlib as mpl
 from ase.gui.widgets import pack
 from gettext import gettext as _
 from ase.data import chemical_symbols as symbols
@@ -203,8 +204,12 @@ class Levels(gtk.Window):
         config_file.close()
 
     def plot_levels(self):
-        scaled_list = []
-        scaled_temp_list = []
+        dist = []
+        dist_temp = []
+        energies = []
+        energies_temp = []
+        col = []
+        col_temp = []
 
         data_file = open('projected_sums.txt', 'r')
 
@@ -212,12 +217,18 @@ class Levels(gtk.Window):
             line_split = line.split()
             
             if line_split[0] == '---':
-                scaled_list.append([energy,scaled_temp_list])
-                scaled_temp_list = []
+                dist.append(dist_temp)    
+                dist_temp = [] 
+                energies.append(energies_temp)
+                energies_temp = []
+                col.append(col_temp) 
+                col_temp = []
+
             else:
-                energy = float(line_split[0])
-                
-                scaled_temp_list.append([float(line_split[1]),float(line_split[2])])  
+                energies_temp.append(float(line_split[0]))
+                dist_temp.append(float(line_split[1]))
+                col_temp.append(1-float(line_split[2]))
+                  
 
         data_file.close()
 
@@ -234,7 +245,9 @@ class Levels(gtk.Window):
         atom_max = max(atom_points)
 
         dist_adjust = (atom_max+atom_min)/2.0
-        
+
+        dist = [[j-dist_adjust for j in i] for i in dist]
+
         atom_file.close()      
 
         plt.rc('text', usetex=True)
@@ -244,21 +257,54 @@ class Levels(gtk.Window):
         #Find nearest multiple of 5 lower than the min
         xticks_min = int((atom_min - dist_adjust)- ((atom_min-dist_adjust)%5))
         #Find nearest multiple of 5 higher than the max + 1 to use in range()
-        xticks_max = int((atom_max - dist_adjust)+ ((atom_max-dist_adjust)%5)) + 6      
+        xticks_max = int((atom_max - dist_adjust)+ ((atom_max-dist_adjust)%5)) + 6  
 
-        for i in range(len(scaled_list)):
-            for j in range(len(scaled_list[i][1])):
+        for i, j in enumerate(dist[0]):
+            if j>xticks_max:
+                max_index = i    
+
+        for i in range(len(dist)):
+            dist[i] = dist[i][:max_index]
+            energies[i] = energies[i][:max_index]
+            col[i] = col[i][:max_index]
+
+        cdict = {'red': ((0., 1, 1),
+                         (0.05, 1, 1),
+                         (0.11, 0, 0),
+                         (0.66, 1, 1),
+                         (0.89, 1, 1),
+                         (1, 0.5, 0.5)),
+                 'green': ((0., 1, 1),
+                           (0.05, 1, 1),
+                           (0.11, 0, 0),
+                           (0.375, 1, 1),
+                           (0.64, 1, 1),
+                           (0.91, 0, 0),
+                           (1, 0, 0)),
+                 'blue': ((0., 1, 1),
+                          (0.05, 1, 1),
+                          (0.11, 1, 1),
+                          (0.34, 1, 1),
+                          (0.65, 0, 0),
+                          (1, 0, 0))}
+
+        new_cmap = mpl.colors.LinearSegmentedColormap('my_colormap',cdict,256)
+
+        for i in range(len(dist)):
                 
-                if (i+1 < len(scaled_list)) and abs(scaled_list[i][0]-scaled_list[i+1][0])<0.05:    
-                    scaled_list[i][0] -= 0.1
-                    scaled_list[i+1][0] += 0.1
-                    #Get the min and max values of the x axis 
-                    xmin,xmax=plt.xlim()
-                    #Add a label indicating the energy shift for degeneracy 
-                    plt.text(xticks_min-4, scaled_list[i][0],'Shifted for \ndegeneracy')            
-                
-                plt.scatter(scaled_list[i][1][j][0]-dist_adjust, scaled_list[i][0],
-                            color=str(scaled_list[i][1][j][1]))
+            if (i+1 < len(dist)) and abs(energies[i][0]-energies[i+1][0])<0.05:    
+                #Get the min and max values of the x axis 
+                xmin,xmax=plt.xlim()
+                #Add a label indicating the energy shift for degeneracy 
+                plt.text(xticks_min-4, energies[i][0],'Shifted for \ndegeneracy')
+
+                for j in range(len(energies[i])):
+                    energies[i][j] -= 0.1
+                    energies[i+1][j] += 0.1
+            
+
+        plt.scatter(dist, energies,cmap=new_cmap, c=col, marker = 's', edgecolor='none')
+                            
 
         plt.xlabel('Distance along v [\AA]')
         plt.ylabel(r'Energy [eV]')          
