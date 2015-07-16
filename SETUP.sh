@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #Go into the source files directory 
-cd Source_Files
+cd src
 
 #Compile the C++ code 
 echo "Compiling..."
