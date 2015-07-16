@@ -15,14 +15,10 @@
 
 using namespace std;
 
-vector<struct Bin_Struct> Project_Points(Voxel_Struct &Voxel_Info, int tot_bin_num,vector<double> v_vec, vector<double> wfn_array)
+vector<struct Bin_Struct> Project_Points(Voxel_Struct &Voxel_Info, double grid_space_size,vector<double> v_vec, vector<double> wfn_array)
 {
     double mag_v,dv,bin_key,proj_u_on_v;
     int index=0;
-
-    //Store the bins in a vector
-    //Each bin will be an instance of the bin struct
-    vector<Bin_Struct> projection_bins(tot_bin_num);
 
     //Get the magnitude of the vector
     for (int i=0; i<v_vec.size();i++){
@@ -30,8 +26,15 @@ vector<struct Bin_Struct> Project_Points(Voxel_Struct &Voxel_Info, int tot_bin_n
     }
     mag_v=sqrt(mag_v);    
 
-    //Find the bin size 
-    dv=mag_v/tot_bin_num;
+    dv=grid_space_size/0.529177249;
+
+    //Find the total number of bins
+    int tot_bin_num = ceil(mag_v/dv);
+    
+    //Store the bins in a vector
+    //Each bin will be an instance of the bin struct
+    vector<Bin_Struct> projection_bins(tot_bin_num);
+
 
     //Populate the distance to the bin in Angstroms
     for (int i=0;i<tot_bin_num;i++){

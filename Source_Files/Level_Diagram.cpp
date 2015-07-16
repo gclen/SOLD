@@ -28,7 +28,7 @@ int main()
     vector<double> v;
     vector<double> point1;
     vector<double> point2;
-    int num_bins;
+    double grid_space=0.0;
     double point_coord=0.0;
 
     //Get the name of the output file to search
@@ -52,8 +52,8 @@ int main()
         point2.push_back(point_coord);
     }
 
-    //Get the number of bins
-    cin >> num_bins;
+    //Get the grid spacing
+    cin >> grid_space;
     //Get the method of scaling 
     cin >> scaling_method; 
 
@@ -86,7 +86,7 @@ int main()
 	        //Read in the data 
 	        wfn_data=Cube_Read(cube_name, Voxel_Info);
 	        //Project the points onto the line
-	        bin_data=Project_Points(Voxel_Info, num_bins, v, wfn_data); 
+	        bin_data=Project_Points(Voxel_Info, grid_space, v, wfn_data); 
 	        
 	     	bin_data = Orbital_Scale_Summed_Wfn(bin_data);    	
 
@@ -112,7 +112,7 @@ int main()
 	        //Read in the data 
 	        wfn_data=Cube_Read(cube_name, Voxel_Info);
 	        //Project the points onto the line
-	        bin_data=Project_Points(Voxel_Info, num_bins, v, wfn_data); 
+	        bin_data=Project_Points(Voxel_Info, grid_space, v, wfn_data); 
 
 	        Bins_Max_Min=Global_Max_Min_Vals(bin_data,Bins_Max_Min);
 
@@ -127,7 +127,7 @@ int main()
 	        //Read in the data 
 	        wfn_data=Cube_Read(cube_name, Voxel_Info);
 	        //Project the points onto the line
-	        bin_data=Project_Points(Voxel_Info, num_bins, v, wfn_data); 
+	        bin_data=Project_Points(Voxel_Info, grid_space, v, wfn_data); 
 
 	        bin_data=Global_Scale_Summed_Wfn(bin_data,Bins_Max_Min);
 

@@ -45,7 +45,7 @@ class Levels(gtk.Window):
         self.occ_spinner = gtk.SpinButton(self.occ_scale, climb_rate=0, digits=0)
         self.occ_spinner.set_update_policy(gtk.UPDATE_IF_VALID)
         self.occ_spinner.set_numeric(True)
-        pack(vbox, [gtk.Label(_('Number of occupied states ')), self.occ_spinner])
+        pack(vbox, [gtk.Label(_('Plot ')), self.occ_spinner, gtk.Label(_('occupied states '))])
         self.occ_scale.connect('value-changed', self.scale_occ_orb) 
 
         #Dial to set number of virtual orbitals
@@ -53,27 +53,27 @@ class Levels(gtk.Window):
         self.virt_spinner = gtk.SpinButton(self.virt_scale, climb_rate=0, digits=0)
         self.virt_spinner.set_update_policy(gtk.UPDATE_IF_VALID)
         self.virt_spinner.set_numeric(True)
-        pack(vbox, [gtk.Label(_('Number of unoccupied states ')),
-                    self.virt_spinner])
+        pack(vbox, [gtk.Label(_('Plot ')),
+                    self.virt_spinner, gtk.Label(_('unoccupied states '))])
         self.virt_scale.connect('value-changed', self.scale_virt_orb) 
 
         #Dial to set number of bins
-        self.bin_scale = gtk.Adjustment(value=100, lower=0, upper=500, step_incr=1)
-        self.bin_spinner = gtk.SpinButton(self.bin_scale, climb_rate=5, digits=0)
+        self.bin_scale = gtk.Adjustment(value=0.3, lower=0.05, upper=0.5, step_incr=0.05)
+        self.bin_spinner = gtk.SpinButton(self.bin_scale, climb_rate=0.05, digits=2)
         self.bin_spinner.set_update_policy(gtk.UPDATE_IF_VALID)
         self.bin_spinner.set_numeric(True)
-        pack(vbox, [gtk.Label(_('Number of bins ')),
+        pack(vbox, [gtk.Label(_(u'Grid spacing (\u212B) ')),
                     self.bin_spinner])
         self.bin_scale.connect('value-changed', self.scale_bin_num) 
 
         #Button to select atoms
         a = pack(vbox, gtk.Label())
-        a, b = pack(vbox, [gtk.Label(_('Select two points and click Confirm')), 
+        a, b = pack(vbox, [gtk.Label(_('Select two points and click ')), 
                            gtk.Button(_('Confirm'))])
         b.connect('clicked', self.confirm_points)
 
         #Button to set scaling
-        a = pack(vbox, gtk.Label('Scaling method'))
+        a = pack(vbox, gtk.Label('Intensity scaling'))
         button = pack(vbox, gtk.RadioButton(None, 'Global'))
         button.connect('toggled', self.set_scaling_method, 'global')
         button.show()
@@ -100,6 +100,7 @@ class Levels(gtk.Window):
 
         if n == 2: 
             self.coords = self.gui.images.P[0][indices]
+            self.selected_indices = indices
         else:
             points_error = gtk.MessageDialog(type=gtk.MESSAGE_ERROR, buttons=gtk.BUTTONS_NONE) 
             points_error.set_markup('Please select two points')
@@ -184,7 +185,7 @@ class Levels(gtk.Window):
     def write_config(self):     
         occ_num = str(self.occ_spinner.get_value_as_int())
         virt_num = str(self.virt_spinner.get_value_as_int())
-        bin_num = str(self.bin_spinner.get_value_as_int())
+        bin_num = str(self.bin_spinner.get_value())
     
         config_file = open('levels_config.txt', 'w')
             
@@ -199,6 +200,7 @@ class Levels(gtk.Window):
 
         config_file.write(bin_num + '\n')
         config_file.write(self.scaling_method + '\n')
+        config_file.close()
 
     def plot_levels(self):
         scaled_list = []
@@ -217,26 +219,77 @@ class Levels(gtk.Window):
                 
                 scaled_temp_list.append([float(line_split[1]),float(line_split[2])])  
 
+        data_file.close()
+
+        #Read atoms
+        atom_file=open('atom_projections.txt','r')
+
+        atom_points=[]
+
+        for atom in atom_file:
+            atom_split=atom.split()
+            atom_points.append(float(atom_split[1]))
+        
+        atom_min = min(atom_points)
+        atom_max = max(atom_points)
+
+        dist_adjust = (atom_max+atom_min)/2.0
+        
+        atom_file.close()      
+
         plt.rc('text', usetex=True)
         plt.rc('font', family='serif')
 
-        plt.xlim((-5,20))
+        #Adjust x labels
+        #Find nearest multiple of 5 lower than the min
+        xticks_min = int((atom_min - dist_adjust)- ((atom_min-dist_adjust)%5))
+        #Find nearest multiple of 5 higher than the max + 1 to use in range()
+        xticks_max = int((atom_max - dist_adjust)+ ((atom_max-dist_adjust)%5)) + 6      
+
         for i in range(len(scaled_list)):
             for j in range(len(scaled_list[i][1])):
                 
-                if (i+1 < len(scaled_list)) and scaled_list[i][0] == scaled_list[i+1][0]:
+                if (i+1 < len(scaled_list)) and abs(scaled_list[i][0]-scaled_list[i+1][0])<0.05:    
                     scaled_list[i][0] -= 0.1
                     scaled_list[i+1][0] += 0.1
                     #Get the min and max values of the x axis 
                     xmin,xmax=plt.xlim()
                     #Add a label indicating the energy shift for degeneracy 
-                    plt.text(xmin+1, scaled_list[i][0],'Shifted for \ndegeneracy')            
+                    plt.text(xticks_min-4, scaled_list[i][0],'Shifted for \ndegeneracy')            
                 
-                plt.scatter(scaled_list[i][1][j][0], scaled_list[i][0],
+                plt.scatter(scaled_list[i][1][j][0]-dist_adjust, scaled_list[i][0],
                             color=str(scaled_list[i][1][j][1]))
 
         plt.xlabel('Distance along v [\AA]')
         plt.ylabel(r'Energy [eV]')          
+
+        #Set the xtics range
+        xticks_list=range(xticks_min,xticks_max,5)
+        xticks_labels=[str(i) for i in range(xticks_min,xticks_max,5)]
+        xticks_labels.append('')
+
+        plt.xticks(xticks_list,xticks_labels)
+        
+        #Put vertical lines at positions of dotted points
+        #Get yrange
+        ymin,ymax=plt.ylim()
+
+        #Get desired atom indices
+        desired_atom_index = self.selected_indices
+
+        #Store positions in a list
+        desired_atoms=[]
+
+        for index in desired_atom_index:
+            desired_atoms.append(atom_points[index]-dist_adjust)
+
+
+        plt.vlines(desired_atoms,ymin,ymax,linestyles='dotted') 
+
+        #Change the xrange
+        plt.xlim(((xticks_min-5),(xticks_max+5)))
+        #Change the yrange 
+        plt.ylim((ymin,ymax))
 
         plt.show()
 

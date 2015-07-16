@@ -10,7 +10,7 @@ struct Orbital_Struct Get_Orbital_Numbers(Orbital_Struct &Orb_Info, int Num_Occ,
 struct Voxel_Struct Voxel_Read(string Cube_File_Name);
 vector<double> Cube_Read(string Cube_File_Name, Voxel_Struct &Voxel_Info);
 vector<double> Find_Line_Equation(Voxel_Struct &Voxel_Info, vector<double> P1, vector<double> P2);
-vector<struct Bin_Struct> Project_Points(Voxel_Struct &Voxel_Info, int tot_bin_num, vector<double> v_vec, vector<double> wfn_array);
+vector<struct Bin_Struct> Project_Points(Voxel_Struct &Voxel_Info, double grid_space_size, vector<double> v_vec, vector<double> wfn_array);
 vector<struct Bin_Struct> Orbital_Scale_Summed_Wfn(vector <struct Bin_Struct> &projection_bins);
 vector<struct Bin_Struct> Global_Scale_Summed_Wfn(vector <struct Bin_Struct> &projection_bins, struct Global_Vals &bins_max_min);
 struct Global_Vals Global_Max_Min_Vals(vector <struct Bin_Struct> &projection_bins, struct Global_Vals &bins_max_min);
