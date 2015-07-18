@@ -8,7 +8,6 @@ from gettext import gettext as _
 from ase.data import chemical_symbols as symbols
 from ase.data import atomic_names as names
 
-
 class Levels(gtk.Window):
 
     def __init__(self, gui):
@@ -59,12 +58,13 @@ class Levels(gtk.Window):
         self.virt_scale.connect('value-changed', self.scale_virt_orb) 
 
         #Dial to set number of bins
-        self.bin_scale = gtk.Adjustment(value=0.3, lower=0.05, upper=0.5, step_incr=0.05)
+        self.bin_scale = gtk.Adjustment(value=0.3, lower=0.3, upper=0.5, step_incr=0.05)
         self.bin_spinner = gtk.SpinButton(self.bin_scale, climb_rate=0.05, digits=2)
         self.bin_spinner.set_update_policy(gtk.UPDATE_IF_VALID)
         self.bin_spinner.set_numeric(True)
         pack(vbox, [gtk.Label(_(u'Grid spacing (\u212B) ')),
                     self.bin_spinner])
+        pack(vbox, gtk.Label(_('Note that the grid spacing should be large compared to the width of the voxels.')))
         self.bin_scale.connect('value-changed', self.scale_bin_num) 
 
         #Button to select atoms
@@ -99,8 +99,11 @@ class Levels(gtk.Window):
         n = len(indices)
         self.nselected = n
 
+        Z = self.gui.images.Z[indices]
+
         if n == 2: 
             self.coords = self.gui.images.P[0][indices]
+            self.chem_sym=[symbols[Z[0]], symbols[Z[1]]]
             self.selected_indices = indices
         else:
             points_error = gtk.MessageDialog(type=gtk.MESSAGE_ERROR, buttons=gtk.BUTTONS_NONE) 
@@ -303,10 +306,10 @@ class Levels(gtk.Window):
                     energies[i+1][j] += 0.1
             
 
-        plt.scatter(dist, energies,cmap=new_cmap, c=col, marker = 's', edgecolor='none')
+        plt.scatter(dist, energies,cmap=new_cmap, c=col, marker = 'o', edgecolor='none')
                             
 
-        plt.xlabel('Distance along v [\AA]')
+        plt.xlabel('Distance [\AA]')
         plt.ylabel(r'Energy [eV]')          
 
         #Set the xtics range
@@ -329,8 +332,14 @@ class Levels(gtk.Window):
         for index in desired_atom_index:
             desired_atoms.append(atom_points[index]-dist_adjust)
 
+        print ymin, energies[0][0]      
+
+        for index, atom in enumerate(desired_atoms):
+            y_shift = abs(abs(ymin)-abs(energies[0][0]))*0.25
+            plt.text((atom+abs(atom*0.05)),(ymin+y_shift), ('%s' % (self.chem_sym[index])))      
 
         plt.vlines(desired_atoms,ymin,ymax,linestyles='dotted') 
+
 
         #Change the xrange
         plt.xlim(((xticks_min-5),(xticks_max+5)))
