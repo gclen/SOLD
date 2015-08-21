@@ -15,7 +15,7 @@ This code requires a Gaussian formatted checkpoint file (.fchk), G09 output file
 <img src="Image_Files/SOLD_GUI.png" width="350">
 <figcaption> <br>Figure 1: Screenshot of the SOLD tool menu in ase-gui. </figcaption>
 </figure>
-
+<br>
 <figure>
 <img src="Image_Files/ASE_GUI_VOLF.png" width="350">
 <figcaption> <br>Figure 2: Screenshot of a molecule (VOLF) visualized in ase-gui. The two fluorine atoms are selected to use as input for SOLD. </figcaption>
