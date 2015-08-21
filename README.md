@@ -4,7 +4,7 @@ Level Diagrams
 SOLD (Spatially Oriented Level Diagrams) produces diagrams that plot the
 energies of single particle orbitals relative to one another.
 Additionally, the lines show the spatial extent of the orbital with
-darker colours indicating more weight in that region. The wavefunction
+warmer colours indicating more weight in that region. The wavefunction
 can be integrated along an arbitrary vector (given two points) which will yield different diagrams.
 
 ### Implementation
