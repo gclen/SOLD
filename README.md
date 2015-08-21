@@ -49,6 +49,6 @@ result.
 Lithium hydride (LiH) was also investigated as a benchmark. Fig. 5 shows the level diagram where the integration was done along the line connecting the two atoms. Atomic positions are denoted by vertical dotted lines. Comparing the levels with their corresponding bubble diagrams shows good agreement. Of particular note, there is an area of minimal weight on Li in LUMO+3 which can be seen on the scaled line. 
 
 <figure>
-<img src="Image_Files/Level_diagram_LiH.png" width="550">
+<img src="Image_Files/Level_diagram_LiH_SOLD.png" width="550">
 <figcaption> <br>Figure 5: Level diagram for LiH. Integration was done along the line connecting the two atoms. </figcaption>
 </figure>
